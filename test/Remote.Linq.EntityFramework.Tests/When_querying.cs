@@ -96,5 +96,49 @@ namespace Remote.Linq.EntityFramework.Tests
             var result = await _queryable.SingleOrDefaultAsync(x => x.Value.ToUpper().Contains("no match")).ConfigureAwait(false);
             result.ShouldBeNull();
         }
+
+        [Fact]
+        private async Task Should_handle_non_materialized_ienumerable_closure()
+        {
+            var data = new List<LookupItem>
+            {
+                new LookupItem { Key = "1", Value = "One" },
+                new LookupItem { Key = "2", Value = "Two" },
+                new LookupItem { Key = "3", Value = "Three" },
+            };
+            var filteredPeoplesNames = data.Where(x => x.Value.StartsWith("O")).Select(x => x.Value);
+            var result = await _queryable.FirstOrDefaultAsync(x => filteredPeoplesNames.Contains(x.Value));
+            result.Value.ShouldBe("One");
+        }
+
+        [Fact]
+        private async Task Should_handle_non_materialized_enumerablequery_closure()
+        {
+            var data = new List<LookupItem>
+            {
+                new LookupItem { Key = "1", Value = "One" },
+                new LookupItem { Key = "2", Value = "Two" },
+                new LookupItem { Key = "3", Value = "Three" },
+            };
+            var filteredPeoplesNames = data.Where(x => x.Value.StartsWith("O")).Select(x => x.Value).AsQueryable();
+            var result = await _queryable.FirstOrDefaultAsync(x => filteredPeoplesNames.Contains(x.Value));
+            result.Value.ShouldBe("One");
+        }
+
+        [Fact]
+        private async Task Should_handle_closure_with_string_property()
+        {
+            var lookupitem = new LookupItem { Key = "1", Value = "One" };
+            var result = await _queryable.FirstOrDefaultAsync(x => x.Value == lookupitem.Value);
+            result.Value.ShouldBe("One");
+        }
+
+        [Fact]
+        private async Task Should_handle_string_closure()
+        {
+            var lookupitem = "One";
+            var result = await _queryable.FirstOrDefaultAsync(x => x.Value == lookupitem);
+            result.Value.ShouldBe("One");
+        }
     }
 }
